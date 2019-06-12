@@ -16,7 +16,9 @@
   limitations under the License.
   -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 
     <parent>
         <groupId>org.apache</groupId>
@@ -110,21 +112,21 @@
     </properties>
 
     <modules>
-        <module>client</module>
-        <module>common</module>
-        <module>broker</module>
-        <module>tools</module>
-        <module>store</module>
-        <module>namesrv</module>
-        <module>remoting</module>
-        <module>logappender</module>
-        <module>example</module>
-        <module>filtersrv</module>
-        <module>srvutil</module>
-        <module>filter</module>
-        <module>test</module>
-        <module>distribution</module>
-        <module>openmessaging</module>
+        <module>rocketmq-client</module>
+        <module>rocketmq-common</module>
+        <module>rocketmq-broker</module>
+        <module>rocketmq-tools</module>
+        <module>rocketmq-store</module>
+        <module>rocketmq-namesrv</module>
+        <module>rocketmq-remoting</module>
+        <module>rocketmq-logappender</module>
+        <module>rocketmq-example</module>
+        <module>rocketmq-filtersrv</module>
+        <module>rocketmq-srvutil</module>
+        <module>rocketmq-filter</module>
+        <module>rocketmq-test</module>
+        <module>rocketmq-distribution</module>
+        <module>rocketmq-openmessaging</module>
     </modules>
 
     <build>
