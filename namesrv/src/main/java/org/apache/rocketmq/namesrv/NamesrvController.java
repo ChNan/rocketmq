@@ -20,6 +20,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+
 import org.apache.rocketmq.common.Configuration;
 import org.apache.rocketmq.common.ThreadFactoryImpl;
 import org.apache.rocketmq.common.constant.LoggerName;
@@ -35,15 +36,24 @@ import org.apache.rocketmq.remoting.netty.NettyServerConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * RocketMQ 寻址服务器控制类
+ */
 public class NamesrvController {
     private static final Logger log = LoggerFactory.getLogger(LoggerName.NAMESRV_LOGGER_NAME);
 
+    // 寻址服务器的配置
     private final NamesrvConfig namesrvConfig;
 
+    //Netty服务器的配置
     private final NettyServerConfig nettyServerConfig;
 
-    private final ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor(new ThreadFactoryImpl(
-        "NSScheduledThread"));
+    //一个单线程的定时任务执行器
+    private final ScheduledExecutorService scheduledExecutorService =
+        Executors.newSingleThreadScheduledExecutor(
+            new ThreadFactoryImpl("NSScheduledThread")
+        );
+
     private final KVConfigManager kvConfigManager;
     private final RouteInfoManager routeInfoManager;
 
@@ -72,10 +82,15 @@ public class NamesrvController {
 
         this.kvConfigManager.load();
 
-        this.remotingServer = new NettyRemotingServer(this.nettyServerConfig, this.brokerHousekeepingService);
+        this.remotingServer = new NettyRemotingServer(
+            this.nettyServerConfig,
+            this.brokerHousekeepingService
+        );
 
-        this.remotingExecutor =
-            Executors.newFixedThreadPool(nettyServerConfig.getServerWorkerThreads(), new ThreadFactoryImpl("RemotingExecutorThread_"));
+        this.remotingExecutor = Executors.newFixedThreadPool(
+            nettyServerConfig.getServerWorkerThreads(),
+            new ThreadFactoryImpl("RemotingExecutorThread_")
+        );
 
         this.registerProcessor();
 
@@ -101,12 +116,20 @@ public class NamesrvController {
     private void registerProcessor() {
         if (namesrvConfig.isClusterTest()) {
 
-            this.remotingServer.registerDefaultProcessor(new ClusterTestRequestProcessor(this, namesrvConfig.getProductEnvName()),
-                this.remotingExecutor);
-        } else {
-
-            this.remotingServer.registerDefaultProcessor(new DefaultRequestProcessor(this), this.remotingExecutor);
+            this.remotingServer.registerDefaultProcessor(
+                new ClusterTestRequestProcessor(
+                    this,
+                    namesrvConfig.getProductEnvName()
+                ),
+                this.remotingExecutor
+            );
+            return;
         }
+
+        this.remotingServer.registerDefaultProcessor(
+            new DefaultRequestProcessor(this),
+            this.remotingExecutor
+        );
     }
 
     public void start() throws Exception {

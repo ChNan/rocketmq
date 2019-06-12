@@ -30,6 +30,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+
 import org.apache.rocketmq.broker.client.ClientHousekeepingService;
 import org.apache.rocketmq.broker.client.ConsumerIdsChangeListener;
 import org.apache.rocketmq.broker.client.ConsumerManager;
@@ -90,59 +91,104 @@ import org.slf4j.LoggerFactory;
 
 public class BrokerController {
     private static final Logger log = LoggerFactory.getLogger(LoggerName.BROKER_LOGGER_NAME);
+
     private static final Logger LOG_PROTECTION = LoggerFactory.getLogger(LoggerName.PROTECTION_LOGGER_NAME);
+
     private static final Logger LOG_WATER_MARK = LoggerFactory.getLogger(LoggerName.WATER_MARK_LOGGER_NAME);
+
     private final BrokerConfig brokerConfig;
+
     private final NettyServerConfig nettyServerConfig;
+
     private final NettyClientConfig nettyClientConfig;
+
     private final MessageStoreConfig messageStoreConfig;
+
     private final ConsumerOffsetManager consumerOffsetManager;
+
     private final ConsumerManager consumerManager;
+
     private final ConsumerFilterManager consumerFilterManager;
+
     private final ProducerManager producerManager;
+
     private final ClientHousekeepingService clientHousekeepingService;
+
     private final PullMessageProcessor pullMessageProcessor;
+
     private final PullRequestHoldService pullRequestHoldService;
+
     private final MessageArrivingListener messageArrivingListener;
+
     private final Broker2Client broker2Client;
+
     private final SubscriptionGroupManager subscriptionGroupManager;
+
     private final ConsumerIdsChangeListener consumerIdsChangeListener;
+
     private final RebalanceLockManager rebalanceLockManager = new RebalanceLockManager();
+
     private final BrokerOuterAPI brokerOuterAPI;
-    private final ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor(new ThreadFactoryImpl(
-        "BrokerControllerScheduledThread"));
+
+    private final ScheduledExecutorService scheduledExecutorService =
+        Executors.newSingleThreadScheduledExecutor(new ThreadFactoryImpl(
+            "BrokerControllerScheduledThread"));
+
     private final SlaveSynchronize slaveSynchronize;
+
     private final BlockingQueue<Runnable> sendThreadPoolQueue;
+
     private final BlockingQueue<Runnable> pullThreadPoolQueue;
+
     private final BlockingQueue<Runnable> queryThreadPoolQueue;
+
     private final BlockingQueue<Runnable> clientManagerThreadPoolQueue;
+
     private final BlockingQueue<Runnable> consumerManagerThreadPoolQueue;
+
     private final FilterServerManager filterServerManager;
+
     private final BrokerStatsManager brokerStatsManager;
+
     private final List<SendMessageHook> sendMessageHookList = new ArrayList<SendMessageHook>();
+
     private final List<ConsumeMessageHook> consumeMessageHookList = new ArrayList<ConsumeMessageHook>();
+
     private MessageStore messageStore;
+
     private RemotingServer remotingServer;
+
     private RemotingServer fastRemotingServer;
+
     private TopicConfigManager topicConfigManager;
+
     private ExecutorService sendMessageExecutor;
+
     private ExecutorService pullMessageExecutor;
+
     private ExecutorService queryMessageExecutor;
+
     private ExecutorService adminBrokerExecutor;
+
     private ExecutorService clientManageExecutor;
+
     private ExecutorService consumerManageExecutor;
+
     private boolean updateMasterHAServerAddrPeriodically = false;
+
     private BrokerStats brokerStats;
+
     private InetSocketAddress storeHost;
+
     private BrokerFastFailure brokerFastFailure;
+
     private Configuration configuration;
 
     public BrokerController(
         final BrokerConfig brokerConfig,
         final NettyServerConfig nettyServerConfig,
         final NettyClientConfig nettyClientConfig,
-        final MessageStoreConfig messageStoreConfig
-    ) {
+        final MessageStoreConfig messageStoreConfig) {
         this.brokerConfig = brokerConfig;
         this.nettyServerConfig = nettyServerConfig;
         this.nettyClientConfig = nettyClientConfig;

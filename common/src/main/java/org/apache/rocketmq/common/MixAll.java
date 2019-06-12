@@ -388,7 +388,8 @@ public class MixAll {
             } catch (Exception ignored) {
             }
 
-            throw new RuntimeException("InetAddress java.net.InetAddress.getLocalHost() throws UnknownHostException" + FAQUrl.suggestTodo(FAQUrl.UNKNOWN_HOST_EXCEPTION), e);
+            throw new RuntimeException("InetAddress java.net.InetAddress.getLocalHost() throws UnknownHostException"
+                + FAQUrl.suggestTodo(FAQUrl.UNKNOWN_HOST_EXCEPTION), e);
         }
     }
 

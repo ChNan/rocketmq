@@ -25,11 +25,13 @@ package org.apache.rocketmq.common.protocol.heartbeat;
  */
 public enum MessageModel {
     /**
-     * broadcast
+     * broadcastm
+     * 广播模型
      */
     BROADCASTING("BROADCASTING"),
     /**
      * clustering
+     * 集群模型
      */
     CLUSTERING("CLUSTERING");
 

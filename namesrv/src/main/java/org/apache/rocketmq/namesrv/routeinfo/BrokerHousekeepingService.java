@@ -25,9 +25,11 @@ import org.slf4j.LoggerFactory;
 
 public class BrokerHousekeepingService implements ChannelEventListener {
     private static final Logger log = LoggerFactory.getLogger(LoggerName.NAMESRV_LOGGER_NAME);
+
     private final NamesrvController namesrvController;
 
     public BrokerHousekeepingService(NamesrvController namesrvController) {
+
         this.namesrvController = namesrvController;
     }
 
@@ -37,16 +39,19 @@ public class BrokerHousekeepingService implements ChannelEventListener {
 
     @Override
     public void onChannelClose(String remoteAddr, Channel channel) {
+
         this.namesrvController.getRouteInfoManager().onChannelDestroy(remoteAddr, channel);
     }
 
     @Override
     public void onChannelException(String remoteAddr, Channel channel) {
+
         this.namesrvController.getRouteInfoManager().onChannelDestroy(remoteAddr, channel);
     }
 
     @Override
     public void onChannelIdle(String remoteAddr, Channel channel) {
+
         this.namesrvController.getRouteInfoManager().onChannelDestroy(remoteAddr, channel);
     }
 }

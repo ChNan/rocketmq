@@ -23,6 +23,7 @@ import java.io.FileInputStream;
 import java.io.InputStream;
 import java.util.Properties;
 import java.util.concurrent.Callable;
+
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
@@ -38,7 +39,10 @@ import org.apache.rocketmq.srvutil.ShutdownHookThread;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+//fixme 这段代码整体上看来还是比较混乱，不够简洁。
 public class NamesrvStartup {
+    private static final Logger log = LoggerFactory.getLogger(LoggerName.NAMESRV_LOGGER_NAME);
+
     public static Properties properties = null;
     public static CommandLine commandLine = null;
 
@@ -47,22 +51,31 @@ public class NamesrvStartup {
     }
 
     public static NamesrvController main0(String[] args) {
-        System.setProperty(RemotingCommand.REMOTING_VERSION_KEY, Integer.toString(MQVersion.CURRENT_VERSION));
-        try {
-            //PackageConflictDetect.detectFastjson();
 
+        // 设置当前版本号为4.2.0，rocketmq.remoting.version = 4.2.0
+        System.setProperty(RemotingCommand.REMOTING_VERSION_KEY, Integer.toString(MQVersion.CURRENT_VERSION));
+
+        try {
             Options options = ServerUtil.buildCommandlineOptions(new Options());
+
             commandLine = ServerUtil.parseCmdLine("mqnamesrv", args, buildCommandlineOptions(options), new PosixParser());
+
             if (null == commandLine) {
                 System.exit(-1);
                 return null;
             }
 
-            final NamesrvConfig namesrvConfig = new NamesrvConfig();
-            final NettyServerConfig nettyServerConfig = new NettyServerConfig();
+            // Rocketmq寻址服务配置
+            NamesrvConfig namesrvConfig = new NamesrvConfig();
+
+            NettyServerConfig nettyServerConfig = new NettyServerConfig();
+
             nettyServerConfig.setListenPort(9876);
+
+            //fixme 这是干嘛的？ 为什么不能直接简单明了的说明含义
             if (commandLine.hasOption('c')) {
                 String file = commandLine.getOptionValue('c');
+                //卫语句
                 if (file != null) {
                     InputStream in = new BufferedInputStream(new FileInputStream(file));
                     properties = new Properties();
@@ -72,7 +85,7 @@ public class NamesrvStartup {
 
                     namesrvConfig.setConfigStorePath(file);
 
-                    System.out.printf("load config properties file OK, " + file + "%n");
+                    log.info("load config properties file OK, " + file + "%n");
                     in.close();
                 }
             }
@@ -85,8 +98,10 @@ public class NamesrvStartup {
 
             MixAll.properties2Object(ServerUtil.commandLine2Properties(commandLine), namesrvConfig);
 
+            namesrvConfig.setRocketmqHome("E:\\B_CodeRepo_Learning\\rocketmq-2\\distribution");
             if (null == namesrvConfig.getRocketmqHome()) {
-                System.out.printf("Please set the %s variable in your environment to match the location of the RocketMQ installation%n", MixAll.ROCKETMQ_HOME_ENV);
+                log.info("Please set the %s variable in your environment to match " +
+                    "the location of the RocketMQ installation%n", MixAll.ROCKETMQ_HOME_ENV);
                 System.exit(-2);
             }
 
@@ -121,9 +136,10 @@ public class NamesrvStartup {
 
             controller.start();
 
-            String tip = "The Name Server boot success. serializeType=" + RemotingCommand.getSerializeTypeConfigInThisServer();
+            String tip = "The Name Server boot success. serializeType="
+                + RemotingCommand.getSerializeTypeConfigInThisServer();
             log.info(tip);
-            System.out.printf(tip + "%n");
+            log.info(tip + "%n");
 
             return controller;
         } catch (Throwable e) {
