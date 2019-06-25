@@ -62,7 +62,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
     private final DefaultMQProducer defaultMQProducer;
 
     private final ConcurrentMap<String/* topic */, TopicPublishInfo> topicPublishInfoTable =
-            new ConcurrentHashMap<String, TopicPublishInfo>();
+            new ConcurrentHashMap<>();
 
     private final ArrayList<SendMessageHook> sendMessageHookList = new ArrayList<>();
 
@@ -125,6 +125,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
     public void start(final boolean startFactory) throws MQClientException {
         switch (this.serviceState) {
             case CREATE_JUST:
+                //***初始先把状态设为失败，后续全部校验启动成功后再修改成启动中*/
                 this.serviceState = ServiceState.START_FAILED;
 
                 this.checkConfig();
@@ -138,8 +139,10 @@ public class DefaultMQProducerImpl implements MQProducerInner {
                 boolean registerOK = mQClientFactory.registerProducer(this.defaultMQProducer.getProducerGroup(), this);
                 if (!registerOK) {
                     this.serviceState = ServiceState.CREATE_JUST;
-                    throw new MQClientException("The producer group[" + this.defaultMQProducer.getProducerGroup()
-                            + "] has been created before, specify another name please." + FAQUrl.suggestTodo(FAQUrl.GROUP_NAME_DUPLICATE_URL),
+                    throw new MQClientException(
+                            "The producer group["+ this.defaultMQProducer.getProducerGroup()+ "]"
+                                    +" has been created before, specify another name please."
+                                    + FAQUrl.suggestTodo(FAQUrl.GROUP_NAME_DUPLICATE_URL),
                             null);
                 }
 
