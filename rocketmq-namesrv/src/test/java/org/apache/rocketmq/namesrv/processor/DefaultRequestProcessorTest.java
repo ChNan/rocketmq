@@ -36,7 +36,7 @@ import org.apache.rocketmq.common.protocol.header.namesrv.GetKVConfigResponseHea
 import org.apache.rocketmq.common.protocol.header.namesrv.PutKVConfigRequestHeader;
 import org.apache.rocketmq.common.protocol.header.namesrv.RegisterBrokerRequestHeader;
 import org.apache.rocketmq.common.protocol.route.BrokerData;
-import org.apache.rocketmq.namesrv.NamesrvController;
+import org.apache.rocketmq.namesrv.NameServerController;
 import org.apache.rocketmq.namesrv.routeinfo.RouteInfoManager;
 import org.apache.rocketmq.remoting.exception.RemotingCommandException;
 import org.apache.rocketmq.remoting.netty.NettyServerConfig;
@@ -53,7 +53,7 @@ import static org.mockito.Mockito.when;
 public class DefaultRequestProcessorTest {
     private DefaultRequestProcessor defaultRequestProcessor;
 
-    private NamesrvController namesrvController;
+    private NameServerController namesrvController;
 
     private NamesrvConfig namesrvConfig;
 
@@ -69,9 +69,9 @@ public class DefaultRequestProcessorTest {
         nettyServerConfig = new NettyServerConfig();
         routeInfoManager = new RouteInfoManager();
 
-        namesrvController = new NamesrvController(namesrvConfig, nettyServerConfig);
+        namesrvController = new NameServerController(namesrvConfig, nettyServerConfig);
 
-        Field field = NamesrvController.class.getDeclaredField("routeInfoManager");
+        Field field = NameServerController.class.getDeclaredField("routeInfoManager");
         field.setAccessible(true);
         field.set(namesrvController, routeInfoManager);
         defaultRequestProcessor = new DefaultRequestProcessor(namesrvController);

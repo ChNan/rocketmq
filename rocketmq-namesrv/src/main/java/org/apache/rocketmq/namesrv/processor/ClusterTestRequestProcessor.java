@@ -24,7 +24,7 @@ import org.apache.rocketmq.common.namesrv.NamesrvUtil;
 import org.apache.rocketmq.common.protocol.ResponseCode;
 import org.apache.rocketmq.common.protocol.header.namesrv.GetRouteInfoRequestHeader;
 import org.apache.rocketmq.common.protocol.route.TopicRouteData;
-import org.apache.rocketmq.namesrv.NamesrvController;
+import org.apache.rocketmq.namesrv.NameServerController;
 import org.apache.rocketmq.remoting.exception.RemotingCommandException;
 import org.apache.rocketmq.remoting.protocol.RemotingCommand;
 import org.apache.rocketmq.tools.admin.DefaultMQAdminExt;
@@ -36,7 +36,7 @@ public class ClusterTestRequestProcessor extends DefaultRequestProcessor {
     private final DefaultMQAdminExt adminExt;
     private final String productEnvName;
 
-    public ClusterTestRequestProcessor(NamesrvController namesrvController, String productEnvName) {
+    public ClusterTestRequestProcessor(NameServerController namesrvController, String productEnvName) {
         super(namesrvController);
         this.productEnvName = productEnvName;
         adminExt = new DefaultMQAdminExt();

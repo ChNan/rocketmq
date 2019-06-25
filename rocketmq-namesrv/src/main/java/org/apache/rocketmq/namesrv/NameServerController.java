@@ -16,11 +16,6 @@
  */
 package org.apache.rocketmq.namesrv;
 
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-
 import org.apache.rocketmq.common.Configuration;
 import org.apache.rocketmq.common.ThreadFactoryImpl;
 import org.apache.rocketmq.common.constant.LoggerName;
@@ -36,10 +31,15 @@ import org.apache.rocketmq.remoting.netty.NettyServerConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+
 /**
  * RocketMQ 寻址服务器控制类
  */
-public class NamesrvController {
+public class NameServerController {
     private static final Logger log = LoggerFactory.getLogger(LoggerName.NAMESRV_LOGGER_NAME);
 
     // 寻址服务器的配置
@@ -65,7 +65,7 @@ public class NamesrvController {
 
     private Configuration configuration;
 
-    public NamesrvController(NamesrvConfig namesrvConfig, NettyServerConfig nettyServerConfig) {
+    public NameServerController(NamesrvConfig namesrvConfig, NettyServerConfig nettyServerConfig) {
         this.namesrvConfig = namesrvConfig;
         this.nettyServerConfig = nettyServerConfig;
         this.kvConfigManager = new KVConfigManager(this);
@@ -98,7 +98,7 @@ public class NamesrvController {
 
             @Override
             public void run() {
-                NamesrvController.this.routeInfoManager.scanNotActiveBroker();
+                NameServerController.this.routeInfoManager.scanNotActiveBroker();
             }
         }, 5, 10, TimeUnit.SECONDS);
 
@@ -106,7 +106,7 @@ public class NamesrvController {
 
             @Override
             public void run() {
-                NamesrvController.this.kvConfigManager.printAllPeriodically();
+                NameServerController.this.kvConfigManager.printAllPeriodically();
             }
         }, 1, 10, TimeUnit.MINUTES);
 

@@ -18,12 +18,6 @@ package org.apache.rocketmq.namesrv;
 
 import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.joran.JoranConfigurator;
-import java.io.BufferedInputStream;
-import java.io.FileInputStream;
-import java.io.InputStream;
-import java.util.Properties;
-import java.util.concurrent.Callable;
-
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
@@ -39,6 +33,12 @@ import org.apache.rocketmq.srvutil.ShutdownHookThread;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.BufferedInputStream;
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.util.Properties;
+import java.util.concurrent.Callable;
+
 //fixme 这段代码整体上看来还是比较混乱，不够简洁。
 public class NamesrvStartup {
     private static final Logger log = LoggerFactory.getLogger(LoggerName.NAMESRV_LOGGER_NAME);
@@ -50,7 +50,7 @@ public class NamesrvStartup {
         main0(args);
     }
 
-    public static NamesrvController main0(String[] args) {
+    public static NameServerController main0(String[] args) {
 
         // 设置当前版本号为4.2.0，rocketmq.remoting.version = 4.2.0
         System.setProperty(RemotingCommand.REMOTING_VERSION_KEY, Integer.toString(MQVersion.CURRENT_VERSION));
@@ -115,7 +115,7 @@ public class NamesrvStartup {
             MixAll.printObjectProperties(log, namesrvConfig);
             MixAll.printObjectProperties(log, nettyServerConfig);
 
-            final NamesrvController controller = new NamesrvController(namesrvConfig, nettyServerConfig);
+            final NameServerController controller = new NameServerController(namesrvConfig, nettyServerConfig);
 
             // remember all configs to prevent discard
             controller.getConfiguration().registerConfig(properties);

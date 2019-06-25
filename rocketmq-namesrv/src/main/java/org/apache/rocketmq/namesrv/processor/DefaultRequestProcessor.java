@@ -45,7 +45,7 @@ import org.apache.rocketmq.common.protocol.header.namesrv.UnRegisterBrokerReques
 import org.apache.rocketmq.common.protocol.header.namesrv.WipeWritePermOfBrokerRequestHeader;
 import org.apache.rocketmq.common.protocol.header.namesrv.WipeWritePermOfBrokerResponseHeader;
 import org.apache.rocketmq.common.protocol.route.TopicRouteData;
-import org.apache.rocketmq.namesrv.NamesrvController;
+import org.apache.rocketmq.namesrv.NameServerController;
 import org.apache.rocketmq.remoting.common.RemotingHelper;
 import org.apache.rocketmq.remoting.exception.RemotingCommandException;
 import org.apache.rocketmq.remoting.netty.NettyRequestProcessor;
@@ -56,9 +56,9 @@ import org.slf4j.LoggerFactory;
 public class DefaultRequestProcessor implements NettyRequestProcessor {
     private static final Logger log = LoggerFactory.getLogger(LoggerName.NAMESRV_LOGGER_NAME);
 
-    protected final NamesrvController namesrvController;
+    protected final NameServerController namesrvController;
 
-    public DefaultRequestProcessor(NamesrvController namesrvController) {
+    public DefaultRequestProcessor(NameServerController namesrvController) {
         this.namesrvController = namesrvController;
     }
 
