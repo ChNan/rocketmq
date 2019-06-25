@@ -522,9 +522,9 @@ public class MQClientInstance {
         if (!this.brokerAddrTable.isEmpty()) {
             long times = this.sendHeartbeatTimesTotal.getAndIncrement();
 
-            Iterator<Entry<String, HashMap<Long, String>>> brokerAddrTableIterator = this.brokerAddrTable.entrySet().iterator();
-            while (brokerAddrTableIterator.hasNext()) {
-                Entry<String, HashMap<Long, String>> brokerAddrTableEntry = brokerAddrTableIterator.next();
+            Iterator<Entry<String, HashMap<Long, String>>> brokerAddrTableIt = this.brokerAddrTable.entrySet().iterator();
+            while (brokerAddrTableIt.hasNext()) {
+                Entry<String, HashMap<Long, String>> brokerAddrTableEntry = brokerAddrTableIt.next();
 
                 String brokerName = brokerAddrTableEntry.getKey();
 
@@ -532,32 +532,33 @@ public class MQClientInstance {
 
                 if (brokerIdAddressMap == null) continue;
 
-                for (Map.Entry<Long, String> entry1 : brokerIdAddressMap.entrySet()) {
-                    Long id = entry1.getKey();
-                    String addr = entry1.getValue();
-                    if (addr != null) {
-                        if (consumerEmpty) {
-                            if (id != MixAll.MASTER_ID)
-                                continue;
-                        }
+                for (Map.Entry<Long, String> brokerIdAddressEntry : brokerIdAddressMap.entrySet()) {
+                    Long brokerId = brokerIdAddressEntry.getKey();
+                    String brokerAddr = brokerIdAddressEntry.getValue();
 
-                        try {
-                            int version = this.mQClientAPIImpl.sendHearbeat(addr, heartbeatData, 3000);
-                            if (!this.brokerVersionTable.containsKey(brokerName)) {
-                                this.brokerVersionTable.put(brokerName, new HashMap<String, Integer>(4));
-                            }
-                            this.brokerVersionTable.get(brokerName).put(addr, version);
-                            if (times % 20 == 0) {
-                                log.info("send heart beat to broker[{} {} {}] success", brokerName, id, addr);
-                                log.info(heartbeatData.toString());
-                            }
-                        } catch (Exception e) {
-                            if (this.isBrokerInNameServer(addr)) {
-                                log.info("send heart beat to broker[{} {} {}] failed", brokerName, id, addr);
-                            } else {
-                                log.info("send heart beat to broker[{} {} {}] exception, because the broker not up, forget brokerAddrTableIterator", brokerName,
-                                        id, addr);
-                            }
+                    if (brokerAddr == null) continue;
+
+                    if (consumerEmpty) {
+                        if (brokerId != MixAll.MASTER_ID)
+                            continue;
+                    }
+
+                    try {
+                        int version = this.mQClientAPIImpl.sendHearbeat(brokerAddr, heartbeatData, 3000);
+                        if (!this.brokerVersionTable.containsKey(brokerName)) {
+                            this.brokerVersionTable.put(brokerName, new HashMap<String, Integer>(4));
+                        }
+                        this.brokerVersionTable.get(brokerName).put(brokerAddr, version);
+                        if (times % 20 == 0) {
+                            log.info("send heart beat to broker[{} {} {}] success", brokerName, brokerId, brokerAddr);
+                            log.info(heartbeatData.toString());
+                        }
+                    } catch (Exception e) {
+                        if (this.isBrokerInNameServer(brokerAddr)) {
+                            log.info("send heart beat to broker[{} {} {}] failed", brokerName, brokerId, brokerAddr);
+                        } else {
+                            log.info("send heart beat to broker[{} {} {}] exception, because the broker not up, forget brokerAddrTableIt", brokerName,
+                                    brokerId, brokerAddr);
                         }
                     }
                 }
