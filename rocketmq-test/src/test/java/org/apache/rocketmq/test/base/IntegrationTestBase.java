@@ -17,17 +17,11 @@
 
 package org.apache.rocketmq.test.base;
 
-import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
-import java.util.UUID;
-import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.rocketmq.broker.BrokerController;
 import org.apache.rocketmq.common.BrokerConfig;
 import org.apache.rocketmq.common.UtilAll;
 import org.apache.rocketmq.common.namesrv.NamesrvConfig;
-import org.apache.rocketmq.namesrv.NamesrvController;
+import org.apache.rocketmq.namesrv.NameServerController;
 import org.apache.rocketmq.remoting.netty.NettyClientConfig;
 import org.apache.rocketmq.remoting.netty.NettyServerConfig;
 import org.apache.rocketmq.store.config.MessageStoreConfig;
@@ -37,6 +31,13 @@ import org.junit.Assert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
+import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
+
 public class IntegrationTestBase {
     public static Logger logger = LoggerFactory.getLogger(IntegrationTestBase.class);
 
@@ -45,7 +46,7 @@ public class IntegrationTestBase {
     protected static final AtomicInteger BROKER_INDEX = new AtomicInteger(0);
     protected static final List<File> TMPE_FILES = new ArrayList<>();
     protected static final List<BrokerController> BROKER_CONTROLLERS = new ArrayList<>();
-    protected static final List<NamesrvController> NAMESRV_CONTROLLERS = new ArrayList<>();
+    protected static final List<NameServerController> NAMESRV_CONTROLLERS = new ArrayList<>();
     protected static int topicCreateTime = 30 * 1000;
     protected static final int COMMIT_LOG_SIZE = 1024 * 1024 * 256;
     protected static final int INDEX_NUM = 1000;
@@ -71,7 +72,7 @@ public class IntegrationTestBase {
                         }
                     }
 
-                    for (NamesrvController namesrvController : NAMESRV_CONTROLLERS) {
+                    for (NameServerController namesrvController : NAMESRV_CONTROLLERS) {
                         if (namesrvController != null) {
                             namesrvController.shutdown();
                         }
@@ -98,7 +99,7 @@ public class IntegrationTestBase {
         return baseDir;
     }
 
-    public static NamesrvController createAndStartNamesrv() {
+    public static NameServerController createAndStartNamesrv() {
         String baseDir = createBaseDir();
         NamesrvConfig namesrvConfig = new NamesrvConfig();
         NettyServerConfig nameServerNettyServerConfig = new NettyServerConfig();
@@ -106,7 +107,7 @@ public class IntegrationTestBase {
         namesrvConfig.setConfigStorePath(baseDir + SEP + "namesrv" + SEP + "namesrv.properties");
 
         nameServerNettyServerConfig.setListenPort(9000 + random.nextInt(1000));
-        NamesrvController namesrvController = new NamesrvController(namesrvConfig, nameServerNettyServerConfig);
+        NameServerController namesrvController = new NameServerController(namesrvConfig, nameServerNettyServerConfig);
         try {
             Assert.assertTrue(namesrvController.initialize());
             logger.info("Name Server Start:{}", nameServerNettyServerConfig.getListenPort());
