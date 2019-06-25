@@ -167,6 +167,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
                 break;
         }
 
+        //***给所有的broker发送心跳包*/
         this.mQClientFactory.sendHeartbeatToAllBrokerWithLock();
     }
 
