@@ -16,7 +16,7 @@
  */
 package org.apache.rocketmq.namesrv;
 
-import org.apache.rocketmq.common.namesrv.NamesrvConfig;
+import org.apache.rocketmq.common.namesrv.NameServerConfig;
 import org.apache.rocketmq.remoting.netty.NettyServerConfig;
 import org.junit.After;
 import org.junit.Before;
@@ -24,14 +24,14 @@ import org.junit.Before;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class NameServerInstanceTest {
-    protected NamesrvController nameSrvController = null;
+    protected NameServerController nameSrvController = null;
     protected NettyServerConfig nettyServerConfig = new NettyServerConfig();
-    protected NamesrvConfig namesrvConfig = new NamesrvConfig();
+    protected NameServerConfig namesrvConfig = new NameServerConfig();
 
     @Before
     public void startup() throws Exception {
         nettyServerConfig.setListenPort(9876);
-        nameSrvController = new NamesrvController(namesrvConfig, nettyServerConfig);
+        nameSrvController = new NameServerController(namesrvConfig, nettyServerConfig);
         boolean initResult = nameSrvController.initialize();
         assertThat(initResult).isTrue();
         nameSrvController.start();

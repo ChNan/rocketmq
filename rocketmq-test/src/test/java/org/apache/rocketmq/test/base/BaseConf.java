@@ -21,7 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 import org.apache.log4j.Logger;
 import org.apache.rocketmq.broker.BrokerController;
-import org.apache.rocketmq.namesrv.NamesrvController;
+import org.apache.rocketmq.namesrv.NameServerController;
 import org.apache.rocketmq.test.client.rmq.RMQAsyncSendProducer;
 import org.apache.rocketmq.test.client.rmq.RMQNormalConsumer;
 import org.apache.rocketmq.test.client.rmq.RMQNormalProducer;
@@ -40,7 +40,7 @@ public class BaseConf {
     protected static int brokerNum;
     protected static int waitTime = 5;
     protected static int consumeTime = 5 * 60 * 1000;
-    protected static NamesrvController namesrvController;
+    protected static NameServerController namesrvController;
     protected static BrokerController brokerController1;
     protected static BrokerController brokerController2;
     protected static List<Object> mqClients = new ArrayList<Object>();

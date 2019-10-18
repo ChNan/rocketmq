@@ -18,12 +18,6 @@ package org.apache.rocketmq.namesrv;
 
 import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.joran.JoranConfigurator;
-import java.io.BufferedInputStream;
-import java.io.FileInputStream;
-import java.io.InputStream;
-import java.util.Properties;
-import java.util.concurrent.Callable;
-
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
@@ -31,7 +25,7 @@ import org.apache.commons.cli.PosixParser;
 import org.apache.rocketmq.common.MQVersion;
 import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.constant.LoggerName;
-import org.apache.rocketmq.common.namesrv.NamesrvConfig;
+import org.apache.rocketmq.common.namesrv.NameServerConfig;
 import org.apache.rocketmq.remoting.netty.NettyServerConfig;
 import org.apache.rocketmq.remoting.protocol.RemotingCommand;
 import org.apache.rocketmq.srvutil.ServerUtil;
@@ -39,9 +33,17 @@ import org.apache.rocketmq.srvutil.ShutdownHookThread;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.BufferedInputStream;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Properties;
+import java.util.concurrent.Callable;
+
 //fixme 这段代码整体上看来还是比较混乱，不够简洁。
-public class NamesrvStartup {
+public class NameServerStartup {
     private static final Logger log = LoggerFactory.getLogger(LoggerName.NAMESRV_LOGGER_NAME);
+    public static final int LISTEN_PORT = 9876;
 
     public static Properties properties = null;
     public static CommandLine commandLine = null;
@@ -50,72 +52,58 @@ public class NamesrvStartup {
         main0(args);
     }
 
-    public static NamesrvController main0(String[] args) {
+    private static void main0(String[] args) {
 
-        // 设置当前版本号为4.2.0，rocketmq.remoting.version = 4.2.0
         System.setProperty(RemotingCommand.REMOTING_VERSION_KEY, Integer.toString(MQVersion.CURRENT_VERSION));
 
         try {
             Options options = ServerUtil.buildCommandlineOptions(new Options());
 
-            commandLine = ServerUtil.parseCmdLine("mqnamesrv", args, buildCommandlineOptions(options), new PosixParser());
+            commandLine = ServerUtil.parseCmdLine("mqnamesrv", args,
+                    buildCommandlineOptions(options), new PosixParser()
+            );
 
             if (null == commandLine) {
                 System.exit(-1);
-                return null;
+                return;
             }
 
-            // Rocketmq寻址服务配置
-            NamesrvConfig namesrvConfig = new NamesrvConfig();
+            // RocketMQ寻址服务配置
+            NameServerConfig nameServerConfig = new NameServerConfig();
 
             NettyServerConfig nettyServerConfig = new NettyServerConfig();
 
-            nettyServerConfig.setListenPort(9876);
+            nettyServerConfig.setListenPort(LISTEN_PORT);
 
-            //fixme 这是干嘛的？ 为什么不能直接简单明了的说明含义
-            if (commandLine.hasOption('c')) {
-                String file = commandLine.getOptionValue('c');
-                //卫语句
-                if (file != null) {
-                    InputStream in = new BufferedInputStream(new FileInputStream(file));
-                    properties = new Properties();
-                    properties.load(in);
-                    MixAll.properties2Object(properties, namesrvConfig);
-                    MixAll.properties2Object(properties, nettyServerConfig);
-
-                    namesrvConfig.setConfigStorePath(file);
-
-                    log.info("load config properties file OK, " + file + "%n");
-                    in.close();
-                }
-            }
+            doHasConfigFileOption(nameServerConfig, nettyServerConfig);
 
             if (commandLine.hasOption('p')) {
-                MixAll.printObjectProperties(null, namesrvConfig);
+                MixAll.printObjectProperties(null, nameServerConfig);
                 MixAll.printObjectProperties(null, nettyServerConfig);
                 System.exit(0);
             }
 
-            MixAll.properties2Object(ServerUtil.commandLine2Properties(commandLine), namesrvConfig);
+            MixAll.properties2Object(ServerUtil.commandLine2Properties(commandLine), nameServerConfig);
 
-            namesrvConfig.setRocketmqHome("E:\\B_CodeRepo_Learning\\rocketmq-2\\distribution");
-            if (null == namesrvConfig.getRocketmqHome()) {
+            nameServerConfig.setRocketmqHome("E:\\B_CodeRepo_Learning\\rocketmq-2\\distribution");
+            if (null == nameServerConfig.getRocketmqHome()) {
                 log.info("Please set the %s variable in your environment to match " +
                     "the location of the RocketMQ installation%n", MixAll.ROCKETMQ_HOME_ENV);
                 System.exit(-2);
             }
 
-            LoggerContext lc = (LoggerContext) LoggerFactory.getILoggerFactory();
+            LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
             JoranConfigurator configurator = new JoranConfigurator();
-            configurator.setContext(lc);
-            lc.reset();
-            configurator.doConfigure(namesrvConfig.getRocketmqHome() + "/conf/logback_namesrv.xml");
-            final Logger log = LoggerFactory.getLogger(LoggerName.NAMESRV_LOGGER_NAME);
+            configurator.setContext(loggerContext);
+            loggerContext.reset();
+            configurator.doConfigure(nameServerConfig.getRocketmqHome() + "/conf/logback_namesrv.xml");
 
-            MixAll.printObjectProperties(log, namesrvConfig);
+            Logger log = LoggerFactory.getLogger(LoggerName.NAMESRV_LOGGER_NAME);
+
+            MixAll.printObjectProperties(log, nameServerConfig);
             MixAll.printObjectProperties(log, nettyServerConfig);
 
-            final NamesrvController controller = new NamesrvController(namesrvConfig, nettyServerConfig);
+            final NameServerController controller = new NameServerController(nameServerConfig, nettyServerConfig);
 
             // remember all configs to prevent discard
             controller.getConfiguration().registerConfig(properties);
@@ -126,13 +114,12 @@ public class NamesrvStartup {
                 System.exit(-3);
             }
 
-            Runtime.getRuntime().addShutdownHook(new ShutdownHookThread(log, new Callable<Void>() {
-                @Override
-                public Void call() throws Exception {
-                    controller.shutdown();
-                    return null;
-                }
-            }));
+            Runtime.getRuntime().addShutdownHook(
+                    new ShutdownHookThread(log, (Callable<Void>) () -> {
+                        controller.shutdown();
+                        return null;
+                    })
+            );
 
             controller.start();
 
@@ -141,13 +128,35 @@ public class NamesrvStartup {
             log.info(tip);
             log.info(tip + "%n");
 
-            return controller;
         } catch (Throwable e) {
             e.printStackTrace();
             System.exit(-1);
         }
+    }
 
-        return null;
+    private static void doHasConfigFileOption(NameServerConfig nameServerConfig,
+                                              NettyServerConfig nettyServerConfig) throws IOException {
+        if (!hasConfigFileOption()) return;
+
+        String file = commandLine.getOptionValue('c');
+
+        if (file == null) return;
+
+        InputStream in = new BufferedInputStream(new FileInputStream(file));
+        properties = new Properties();
+        properties.load(in);
+
+        MixAll.properties2Object(properties, nameServerConfig);
+        MixAll.properties2Object(properties, nettyServerConfig);
+
+        nameServerConfig.setConfigStorePath(file);
+
+        log.info("load config properties file OK, " + file + "%n");
+        in.close();
+    }
+
+    private static boolean hasConfigFileOption() {
+        return commandLine.hasOption('c');
     }
 
     public static Options buildCommandlineOptions(final Options options) {
