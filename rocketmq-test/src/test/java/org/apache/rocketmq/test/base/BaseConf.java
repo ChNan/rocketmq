@@ -17,8 +17,6 @@
 
 package org.apache.rocketmq.test.base;
 
-import java.util.ArrayList;
-import java.util.List;
 import org.apache.log4j.Logger;
 import org.apache.rocketmq.broker.BrokerController;
 import org.apache.rocketmq.namesrv.NameServerController;
@@ -31,6 +29,9 @@ import org.apache.rocketmq.test.factory.ConsumerFactory;
 import org.apache.rocketmq.test.listener.AbstractListener;
 import org.apache.rocketmq.test.util.MQAdmin;
 import org.apache.rocketmq.test.util.MQRandomUtils;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class BaseConf {
     protected static String nsAddr;
