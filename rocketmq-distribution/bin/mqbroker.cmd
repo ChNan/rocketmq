@@ -16,8 +16,8 @@ rem limitations under the License.
 
 if not exist "%ROCKETMQ_HOME%\bin\runbroker.cmd" echo Please set the ROCKETMQ_HOME variable in your environment! & EXIT /B 1
 
-call "%ROCKETMQ_HOME%\bin\runbroker.cmd" org.apache.rocketmq.broker.BrokerStartup %*
+call "%ROCKETMQ_HOME%\bin\runbroker.cmd" org.apache.rocketmq.broker.com.itech.lightmq.broker.BrokerStartup %*
 
 IF %ERRORLEVEL% EQU 0 (
-   ECHO "Broker starts OK"
+   ECHO "com.itech.lightmq.remoting.Broker starts OK"
 )

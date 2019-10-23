@@ -27,4 +27,4 @@ IF %ERRORLEVEL% NEQ 0 (
    EXIT /B 1
 )
 
-echo "Start Name Server and Broker Successfully."
+echo "Start Name Server and com.itech.lightmq.remoting.Broker Successfully."

@@ -22,7 +22,7 @@ set "PATH=%JAVA_HOME%\bin;%PATH%"
 
 if /I "%1" == "broker" (
     echo killing broker
-    for /f "tokens=1" %%i in ('jps -m ^| find "BrokerStartup"') do ( taskkill /F /PID %%i )
+    for /f "tokens=1" %%i in ('jps -m ^| find "com.itech.lightmq.broker.BrokerStartup"') do ( taskkill /F /PID %%i )
     echo Done!
 ) else if /I "%1" == "namesrv" (
     echo killing name server

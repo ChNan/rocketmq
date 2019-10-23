@@ -26,8 +26,8 @@ nohup sh mqnamesrv > ns.log 2>&1 &
 ADDR=`hostname -i`:9876
 
 #
-# Broker
+# com.itech.lightmq.remoting.Broker
 #
 nohup sh mqbroker -n ${ADDR} > bk.log 2>&1 &
 
-echo "Start Name Server and Broker Successfully, ${ADDR}"
+echo "Start Name Server and com.itech.lightmq.remoting.Broker Successfully, ${ADDR}"

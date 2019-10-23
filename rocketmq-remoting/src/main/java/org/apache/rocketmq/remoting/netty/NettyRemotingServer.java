@@ -162,11 +162,19 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
                 this.serverBootstrap
                         .group(this.eventLoopGroupBoss, this.eventLoopGroupSelector)
                         .channel(useEpoll() ? EpollServerSocketChannel.class : NioServerSocketChannel.class)
+                        //BACKLOG用于构造服务端套接字ServerSocket对象，标识当服务器请求处理线程全满时，
+                        //用于临时存放已完成三次握手的请求的队列的最大长度。如果未设置或所设置的值小于1，Java将使用默认值50。
                         .option(ChannelOption.SO_BACKLOG, 1024)
+                        //如果要求高实时性，有数据发送时就马上发送，就将该选项设置为true关闭Nagle算法；
+                        //如果要减少发送次数减少网络交互，就设置为false等累积一定大小后再发送。默认为false。
                         .option(ChannelOption.SO_REUSEADDR, true)
+                        //是否启用心跳保活机制。在双方TCP套接字建立连接后（即都进入ESTABLISHED状态）
+                        // 并且在两个小时左右上层没有任何数据传输的情况下，这套机制才会被激活。
                         .option(ChannelOption.SO_KEEPALIVE, false)
                         .childOption(ChannelOption.TCP_NODELAY, true)
+                        //定义传输的系统缓冲区buf的大小，
                         .childOption(ChannelOption.SO_SNDBUF, nettyServerConfig.getServerSocketSndBufSize())
+                        //定义接收的系统缓冲区buf的大小，
                         .childOption(ChannelOption.SO_RCVBUF, nettyServerConfig.getServerSocketRcvBufSize())
                         .localAddress(new InetSocketAddress(this.nettyServerConfig.getListenPort()))
                         .childHandler(new ChannelInitializer<SocketChannel>() {

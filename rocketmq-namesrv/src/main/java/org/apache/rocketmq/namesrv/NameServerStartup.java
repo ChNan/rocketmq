@@ -85,7 +85,7 @@ public class NameServerStartup {
 
             MixAll.properties2Object(ServerUtil.commandLine2Properties(commandLine), nameServerConfig);
 
-            nameServerConfig.setRocketmqHome("E:\\B_CodeRepo_Learning\\rocketmq-2\\distribution");
+            nameServerConfig.setRocketmqHome("E:\\B_CodeRepo_Learning\\rocketmq-2\\rocketmq-distribution");
             if (null == nameServerConfig.getRocketmqHome()) {
                 log.info("Please set the %s variable in your environment to match " +
                     "the location of the RocketMQ installation%n", MixAll.ROCKETMQ_HOME_ENV);

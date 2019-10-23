@@ -47,12 +47,16 @@ import java.io.InputStream;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.apache.rocketmq.common.constant.Constant.Broker.*;
+import static org.apache.rocketmq.common.constant.Constant.LogModule.BROKER_STARTUP;
 import static org.apache.rocketmq.remoting.netty.TlsSystemConfig.TLS_ENABLE;
 
 public class BrokerStartup {
-    public static Properties properties = null;
-    public static CommandLine commandLine = null;
-    public static String configFile = null;
+
+
+    public static Properties properties;
+    public static CommandLine commandLine;
+    public static String configFile;
     public static Logger log;
 
     public static void main(String[] args) {
@@ -60,20 +64,16 @@ public class BrokerStartup {
         start(createBrokerController(args));
     }
 
-    public static BrokerController start(BrokerController controller) {
+    public static void start(BrokerController controller) {
         try {
 
             controller.start();
 
             logTip(controller);
-
-            return controller;
         } catch (Throwable e) {
-            e.printStackTrace();
+            log.error(BROKER_STARTUP + "Broker startup failed ", e);
             System.exit(-1);
         }
-
-        return null;
     }
 
     private static void logTip(BrokerController controller) {
@@ -91,17 +91,10 @@ public class BrokerStartup {
     }
 
     public static BrokerController createBrokerController(String[] args) {
-        System.setProperty(RemotingCommand.REMOTING_VERSION_KEY, Integer.toString(MQVersion.CURRENT_VERSION));
-
-        if (null == System.getProperty(NettySystemConfig.COM_ROCKETMQ_REMOTING_SOCKET_SNDBUF_SIZE)) {
-            NettySystemConfig.socketSndbufSize = 131072;
-        }
-
-        if (null == System.getProperty(NettySystemConfig.COM_ROCKETMQ_REMOTING_SOCKET_RCVBUF_SIZE)) {
-            NettySystemConfig.socketRcvbufSize = 131072;
-        }
-
         try {
+
+            setDefaultValue();
+
             BrokerController controller = newBrokerController(args);
 
             boolean initResult = controller.initialize();
@@ -110,49 +103,56 @@ public class BrokerStartup {
                 System.exit(-3);
             }
 
-            Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
-                private volatile boolean hasShutdown = false;
-                private AtomicInteger shutdownTimes = new AtomicInteger(0);
-
-                @Override
-                public void run() {
-                    synchronized (this) {
-                        log.info("Shutdown hook was invoked, {}", this.shutdownTimes.incrementAndGet());
-                        if (!this.hasShutdown) {
-                            this.hasShutdown = true;
-                            long beginTime = System.currentTimeMillis();
-                            controller.shutdown();
-                            long consumingTimeTotal = System.currentTimeMillis() - beginTime;
-                            log.info("Shutdown hook over, consuming total time(ms): {}", consumingTimeTotal);
-                        }
-                    }
-                }
-            }, "ShutdownHook"));
+            addShutdownHook(controller);
 
             return controller;
         } catch (Throwable e) {
+
             e.printStackTrace();
+            log.error(BROKER_STARTUP + "Create broker controller failed", e);
+
             System.exit(-1);
         }
 
         return null;
     }
 
+    private static void setDefaultValue() {
+        System.setProperty(RemotingCommand.REMOTING_VERSION_KEY, Integer.toString(MQVersion.CURRENT_VERSION));
+
+        if (null == System.getProperty(NettySystemConfig.COM_ROCKETMQ_REMOTING_SOCKET_SNDBUF_SIZE)) {
+            NettySystemConfig.socketSndbufSize = BYTES_128;
+        }
+
+        if (null == System.getProperty(NettySystemConfig.COM_ROCKETMQ_REMOTING_SOCKET_RCVBUF_SIZE)) {
+            NettySystemConfig.socketRcvbufSize = BYTES_128;
+        }
+    }
+
+    private static void addShutdownHook(BrokerController controller) {
+        Runtime.getRuntime().addShutdownHook(new ShowdownHookRunnable("ShowdownHook", controller));
+    }
+
     private static BrokerController newBrokerController(String[] args) throws IOException, JoranException {
         Options options = ServerUtil.buildCommandlineOptions(new Options());
-        commandLine = ServerUtil.parseCmdLine("mqbroker", args, buildCommandlineOptions(options),
-                new PosixParser());
+
+        commandLine = ServerUtil.parseCmdLine(
+                MQBROKER,
+                args,
+                buildCommandlineOptions(options),
+                new PosixParser()
+        );
+
         if (null == commandLine) {
             System.exit(-1);
         }
 
         BrokerConfig brokerConfig = new BrokerConfig();
-        NettyServerConfig nettyServerConfig = new NettyServerConfig();
-        NettyClientConfig nettyClientConfig = new NettyClientConfig();
 
-        nettyClientConfig.setUseTLS(Boolean.parseBoolean(System.getProperty(TLS_ENABLE,
-                String.valueOf(TlsSystemConfig.tlsMode == TlsMode.ENFORCING))));
-        nettyServerConfig.setListenPort(10911);
+        NettyServerConfig nettyServerConfig = newNettyServerConfig();
+
+        NettyClientConfig nettyClientConfig = newNettyClientConfig();
+
         MessageStoreConfig messageStoreConfig = new MessageStoreConfig();
 
         if (BrokerRole.SLAVE == messageStoreConfig.getBrokerRole()) {
@@ -160,48 +160,19 @@ public class BrokerStartup {
             messageStoreConfig.setAccessMessageInMemoryMaxRatio(ratio);
         }
 
-        if (commandLine.hasOption('c')) {
-            String file = commandLine.getOptionValue('c');
-            if (file != null) {
-                configFile = file;
-                InputStream in = new BufferedInputStream(new FileInputStream(file));
-                properties = new Properties();
-                properties.load(in);
-
-                properties2SystemEnv(properties);
-                MixAll.properties2Object(properties, brokerConfig);
-                MixAll.properties2Object(properties, nettyServerConfig);
-                MixAll.properties2Object(properties, nettyClientConfig);
-                MixAll.properties2Object(properties, messageStoreConfig);
-
-                BrokerPathConfigHelper.setBrokerConfigPath(file);
-                in.close();
-            }
-        }
+        loadPropertiesByConfigFile(brokerConfig, nettyServerConfig, nettyClientConfig, messageStoreConfig);
 
         MixAll.properties2Object(ServerUtil.commandLine2Properties(commandLine), brokerConfig);
-        brokerConfig.setRocketmqHome("E:\\B_CodeRepo_Learning\\rocketmq-2\\distribution");
+
+        brokerConfig.setRocketmqHome("E:\\B_CodeRepo_Learning\\rocketmq-2\\rocketmq-distribution");
         brokerConfig.setNamesrvAddr("localhost:9876");
         if (null == brokerConfig.getRocketmqHome()) {
-            System.out.printf("Please set the " + MixAll.ROCKETMQ_HOME_ENV
-                    + " variable in your environment to match the location of the RocketMQ installation");
+            log.info( ("Please set the " + MixAll.ROCKETMQ_HOME_ENV
+                    + " variable in your environment to match the location of the RocketMQ installation"));
             System.exit(-2);
         }
 
-        String namesrvAddr = brokerConfig.getNamesrvAddr();
-        if (null != namesrvAddr) {
-            try {
-                String[] addrArray = namesrvAddr.split(";");
-                for (String addr : addrArray) {
-                    RemotingUtil.string2SocketAddress(addr);
-                }
-            } catch (Exception e) {
-                System.out.printf(
-                        "The Name Server Address[%s] illegal, please set it as follows, \"127.0.0.1:9876;192.168.0.1:9876\"%n",
-                        namesrvAddr);
-                System.exit(-3);
-            }
-        }
+        validateNameServerAddr(brokerConfig);
 
         switch (messageStoreConfig.getBrokerRole()) {
             case ASYNC_MASTER:
@@ -209,40 +180,22 @@ public class BrokerStartup {
                 brokerConfig.setBrokerId(MixAll.MASTER_ID);
                 break;
             case SLAVE:
-                if (brokerConfig.getBrokerId() <= 0) {
-                    System.out.printf("Slave's brokerId must be > 0");
-                    System.exit(-3);
-                }
+                if (brokerConfig.getBrokerId() > 0) break;
 
+                log.info(BROKER_STARTUP + "Slave's brokerId must be > 0");
+                System.exit(-3);
                 break;
             default:
                 break;
-
-
         }
 
         messageStoreConfig.setHaListenPort(nettyServerConfig.getListenPort() + 1);
-        LoggerContext lc = (LoggerContext) LoggerFactory.getILoggerFactory();
-        JoranConfigurator configurator = new JoranConfigurator();
-        configurator.setContext(lc);
-        lc.reset();
-        configurator.doConfigure(brokerConfig.getRocketmqHome() + "/conf/logback_broker.xml");
 
-        if (commandLine.hasOption('p')) {
-            Logger console = LoggerFactory.getLogger(LoggerName.BROKER_CONSOLE_NAME);
-            MixAll.printObjectProperties(console, brokerConfig);
-            MixAll.printObjectProperties(console, nettyServerConfig);
-            MixAll.printObjectProperties(console, nettyClientConfig);
-            MixAll.printObjectProperties(console, messageStoreConfig);
-            System.exit(0);
-        } else if (commandLine.hasOption('m')) {
-            Logger console = LoggerFactory.getLogger(LoggerName.BROKER_CONSOLE_NAME);
-            MixAll.printObjectProperties(console, brokerConfig, true);
-            MixAll.printObjectProperties(console, nettyServerConfig, true);
-            MixAll.printObjectProperties(console, nettyClientConfig, true);
-            MixAll.printObjectProperties(console, messageStoreConfig, true);
-            System.exit(0);
-        }
+        configLogger(brokerConfig);
+
+        printlnAllConfigItems(brokerConfig, nettyServerConfig, nettyClientConfig, messageStoreConfig);
+
+        printlnImportantConfig(brokerConfig, nettyServerConfig, nettyClientConfig, messageStoreConfig);
 
         log = LoggerFactory.getLogger(LoggerName.BROKER_LOGGER_NAME);
         MixAll.printObjectProperties(log, brokerConfig);
@@ -250,22 +203,124 @@ public class BrokerStartup {
         MixAll.printObjectProperties(log, nettyClientConfig);
         MixAll.printObjectProperties(log, messageStoreConfig);
 
-        BrokerController controller =  new BrokerController(
-            brokerConfig,
-            nettyServerConfig,
-            nettyClientConfig,
-            messageStoreConfig);
+        BrokerController controller = new BrokerController(
+                brokerConfig, nettyServerConfig,
+                nettyClientConfig, messageStoreConfig
+        );
 
-        // remember all configs to prevent discard
         controller.getConfiguration().registerConfig(properties);
 
         return controller;
+    }
+
+    private static NettyServerConfig newNettyServerConfig() {
+        NettyServerConfig nettyServerConfig = new NettyServerConfig();
+
+        nettyServerConfig.setListenPort(LISTEN_PORT);
+        return nettyServerConfig;
+    }
+
+    private static NettyClientConfig newNettyClientConfig() {
+        NettyClientConfig nettyClientConfig = new NettyClientConfig();
+
+        nettyClientConfig.setUseTLS(
+                Boolean.parseBoolean(
+                        System.getProperty(
+                                TLS_ENABLE,
+                                String.valueOf(TlsSystemConfig.tlsMode == TlsMode.ENFORCING)
+                        )
+                )
+        );
+        return nettyClientConfig;
+    }
+
+    private static void configLogger(BrokerConfig brokerConfig) throws JoranException {
+        LoggerContext lc = (LoggerContext) LoggerFactory.getILoggerFactory();
+
+        //用于定义Logback的配置机制
+        JoranConfigurator configurator = new JoranConfigurator();
+        configurator.setContext(lc);
+
+        lc.reset();
+
+        configurator.doConfigure(brokerConfig.getRocketmqHome() + "/conf/logback_broker.xml");
+    }
+
+    private static void printlnAllConfigItems(BrokerConfig brokerConfig,
+                                              NettyServerConfig nettyServerConfig,
+                                              NettyClientConfig nettyClientConfig,
+                                              MessageStoreConfig messageStoreConfig) {
+        if (!commandLine.hasOption('p')) return;
+
+        Logger console = LoggerFactory.getLogger(LoggerName.BROKER_CONSOLE_NAME);
+        MixAll.printObjectProperties(console, brokerConfig);
+        MixAll.printObjectProperties(console, nettyServerConfig);
+        MixAll.printObjectProperties(console, nettyClientConfig);
+        MixAll.printObjectProperties(console, messageStoreConfig);
+        System.exit(0);
+    }
+
+    private static void printlnImportantConfig(BrokerConfig brokerConfig,
+                                               NettyServerConfig nettyServerConfig,
+                                               NettyClientConfig nettyClientConfig,
+                                               MessageStoreConfig messageStoreConfig) {
+        if (!commandLine.hasOption('m')) return ;
+
+        Logger console = LoggerFactory.getLogger(LoggerName.BROKER_CONSOLE_NAME);
+        MixAll.printObjectProperties(console, brokerConfig, true);
+        MixAll.printObjectProperties(console, nettyServerConfig, true);
+        MixAll.printObjectProperties(console, nettyClientConfig, true);
+        MixAll.printObjectProperties(console, messageStoreConfig, true);
+        System.exit(0);
+    }
+
+    private static void validateNameServerAddr(BrokerConfig brokerConfig) {
+        String nameServerAddr = brokerConfig.getNamesrvAddr();
+        if (null == nameServerAddr) return;
+
+        try {
+            String[] addrArray = nameServerAddr.split(";");
+            for (String addr : addrArray) {
+                RemotingUtil.string2SocketAddress(addr);
+            }
+        } catch (Exception e) {
+            log.info( "The Name Server Address[%s] illegal, please set it as follows, " +
+                            "\"127.0.0.1:9876;192.168.0.1:9876\"%n", nameServerAddr);
+            System.exit(-3);
+        }
+    }
+
+    private static void loadPropertiesByConfigFile(BrokerConfig brokerConfig,
+                                                   NettyServerConfig nettyServerConfig,
+                                                   NettyClientConfig nettyClientConfig,
+                                                   MessageStoreConfig messageStoreConfig) throws IOException {
+        if (!commandLine.hasOption('c')) return;
+
+        String file = commandLine.getOptionValue('c');
+
+        if (file == null) return ;
+
+        configFile = file;
+        InputStream in = new BufferedInputStream(new FileInputStream(file));
+        properties = new Properties();
+        properties.load(in);
+
+        properties2SystemEnv(properties);
+        MixAll.properties2Object(properties, brokerConfig);
+        MixAll.properties2Object(properties, nettyServerConfig);
+        MixAll.properties2Object(properties, nettyClientConfig);
+        MixAll.properties2Object(properties, messageStoreConfig);
+
+        BrokerPathConfigHelper.setBrokerConfigPath(file);
+
+        in.close();
     }
 
     private static void properties2SystemEnv(Properties properties) {
         if (properties == null) {
             return;
         }
+
         String rmqAddressServerDomain = properties.getProperty("rmqAddressServerDomain", MixAll.WS_DOMAIN_NAME);
         String rmqAddressServerSubGroup = properties.getProperty("rmqAddressServerSubGroup", MixAll.WS_DOMAIN_SUBGROUP);
         System.setProperty("rocketmq.namesrv.domain", rmqAddressServerDomain);
@@ -286,5 +341,34 @@ public class BrokerStartup {
         options.addOption(opt);
 
         return options;
+    }
+
+    static class ShowdownHookRunnable extends Thread {
+        private volatile boolean hasShutdown = false;
+        private AtomicInteger shutdownTimes = new AtomicInteger(0);
+
+        private BrokerController controller;
+
+        ShowdownHookRunnable(String name, BrokerController controller){
+            super(name);
+            this.controller = controller;
+        }
+
+        @Override
+        public void run() {
+            synchronized (this) {
+                log.info(BROKER_STARTUP + "Shutdown hook was invoked, {}", this.shutdownTimes.incrementAndGet());
+
+                if (this.hasShutdown) return ;
+
+                this.hasShutdown = true;
+                long beginTime = System.currentTimeMillis();
+
+                controller.shutdown();
+
+                long consumingTimeTotal = System.currentTimeMillis() - beginTime;
+                log.info(BROKER_STARTUP + "Shutdown hook over, consuming total time(ms): {}", consumingTimeTotal);
+            }
+        }
     }
 }

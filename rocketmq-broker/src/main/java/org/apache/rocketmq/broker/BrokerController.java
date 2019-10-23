@@ -125,9 +125,9 @@ public class BrokerController {
 
     private final BrokerStatsManager brokerStatsManager;
 
-    private final List<SendMessageHook> sendMessageHookList = new ArrayList<SendMessageHook>();
+    private final List<SendMessageHook> sendMessageHookList = new ArrayList<>();
 
-    private final List<ConsumeMessageHook> consumeMessageHookList = new ArrayList<ConsumeMessageHook>();
+    private final List<ConsumeMessageHook> consumeMessageHookList = new ArrayList<>();
 
     private MessageStore messageStore;
 
@@ -495,13 +495,16 @@ public class BrokerController {
 
     public void protectBroker() {
         if (this.brokerConfig.isDisableConsumeIfConsumerReadSlowly()) {
-            final Iterator<Map.Entry<String, MomentStatsItem>> it = this.brokerStatsManager.getMomentStatsItemSetFallSize().getStatsItemTable().entrySet().iterator();
+            Iterator<Map.Entry<String, MomentStatsItem>> it = this.brokerStatsManager
+                    .getMomentStatsItemSetFallSize()
+                    .getStatsItemTable().entrySet().iterator();
+
             while (it.hasNext()) {
-                final Map.Entry<String, MomentStatsItem> next = it.next();
-                final long fallBehindBytes = next.getValue().getValue().get();
+                Map.Entry<String, MomentStatsItem> next = it.next();
+                long fallBehindBytes = next.getValue().getValue().get();
                 if (fallBehindBytes > this.brokerConfig.getConsumerFallbehindThreshold()) {
-                    final String[] split = next.getValue().getStatsKey().split("@");
-                    final String group = split[2];
+                    String[] split = next.getValue().getStatsKey().split("@");
+                    String group = split[2];
                     LOG_PROTECTION.info("[PROTECT_BROKER] the consumer[{}] consume slowly, {} bytes, disable it", group, fallBehindBytes);
                     this.subscriptionGroupManager.disableConsume(group);
                 }
@@ -729,7 +732,7 @@ public class BrokerController {
 
         if (!PermName.isWriteable(this.getBrokerConfig().getBrokerPermission())
             || !PermName.isReadable(this.getBrokerConfig().getBrokerPermission())) {
-            ConcurrentHashMap<String, TopicConfig> topicConfigTable = new ConcurrentHashMap<String, TopicConfig>();
+            ConcurrentHashMap<String, TopicConfig> topicConfigTable = new ConcurrentHashMap<>();
             for (TopicConfig topicConfig : topicConfigWrapper.getTopicConfigTable().values()) {
                 TopicConfig tmp =
                     new TopicConfig(topicConfig.getTopicName(), topicConfig.getReadQueueNums(), topicConfig.getWriteQueueNums(),

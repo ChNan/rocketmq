@@ -22,7 +22,7 @@
 
     <jvmtype>server</jvmtype>
 
-    <mainclass>org.apache.rocketmq.broker.BrokerStartup</mainclass>
+    <mainclass>org.apache.rocketmq.broker.com.itech.lightmq.broker.BrokerStartup</mainclass>
 
     <properties>
         <java.ext.dirs>${cpd}/../lib</java.ext.dirs>
