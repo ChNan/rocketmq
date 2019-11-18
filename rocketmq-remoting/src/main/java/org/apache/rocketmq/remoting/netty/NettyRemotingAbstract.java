@@ -359,20 +359,24 @@ public abstract class NettyRemotingAbstract {
             this.responseTable.put(opaque, responseFuture);
             final SocketAddress addr = channel.remoteAddress();
             channel.writeAndFlush(request)
-                    .addListener((ChannelFutureListener) f -> {
-                        if (f.isSuccess()) {
-                            responseFuture.setSendRequestOK(true);
-                            return;
-                        } else {
-                            responseFuture.setSendRequestOK(false);
-                        }
+                    .addListener(
+                            new ChannelFutureListener() {
+                                @Override
+                                public void operationComplete(ChannelFuture f) throws Exception {
+                                    if (f.isSuccess()) {
+                                        responseFuture.setSendRequestOK(true);
+                                        return;
+                                    } else {
+                                        responseFuture.setSendRequestOK(false);
+                                    }
 
-                        responseTable.remove(opaque);
-                        responseFuture.setCause(f.cause());
-                        responseFuture.putResponse(null);
-                        log.warn("send a request command to channel <" + addr + "> failed.");
-                    });
-
+                                    responseTable.remove(opaque);
+                                    responseFuture.setCause(f.cause());
+                                    responseFuture.putResponse(null);
+                                    log.warn("send a request command to channel <" + addr + "> failed.");
+                                }
+                            }
+                    );
             RemotingCommand responseCommand = responseFuture.waitResponse(timeoutMillis);
             if (null == responseCommand) {
                 if (responseFuture.isSendRequestOK()) {
