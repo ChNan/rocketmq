@@ -706,15 +706,11 @@ public class BrokerController {
 
         this.registerBrokerAll(true, false);
 
-        this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
-
-            @Override
-            public void run() {
-                try {
-                    BrokerController.this.registerBrokerAll(true, false);
-                } catch (Throwable e) {
-                    log.error("registerBrokerAll Exception", e);
-                }
+        this.scheduledExecutorService.scheduleAtFixedRate(() -> {
+            try {
+                BrokerController.this.registerBrokerAll(true, false);
+            } catch (Throwable e) {
+                log.error("registerBrokerAll Exception", e);
             }
         }, 1000 * 10, 1000 * 30, TimeUnit.MILLISECONDS);
 

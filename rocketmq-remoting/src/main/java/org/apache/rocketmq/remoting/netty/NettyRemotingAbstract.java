@@ -38,10 +38,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.SocketAddress;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
+import java.text.SimpleDateFormat;
+import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.*;
 
@@ -135,12 +133,15 @@ public abstract class NettyRemotingAbstract {
      */
     public void processMessageReceived(ChannelHandlerContext ctx, RemotingCommand msg) throws Exception {
         final RemotingCommand cmd = msg;
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss:SSS");
         if (cmd != null) {
             switch (cmd.getType()) {
                 case REQUEST_COMMAND:
+                    System.out.println(simpleDateFormat.format(new Date()) + " This is request");
                     processRequestCommand(ctx, cmd);
                     break;
                 case RESPONSE_COMMAND:
+                    System.out.println(simpleDateFormat.format(new Date()) + " This is response");
                     processResponseCommand(ctx, cmd);
                     break;
                 default:
@@ -180,6 +181,9 @@ public abstract class NettyRemotingAbstract {
                                 response.setOpaque(opaque);
                                 response.markResponseType();
                                 try {
+                                    SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss:SSS");
+
+                                    System.out.println(simpleDateFormat.format(new Date()) + " Write response");
                                     ctx.writeAndFlush(response);
                                 } catch (Throwable e) {
                                     log.error("process request over, but response failed", e);
