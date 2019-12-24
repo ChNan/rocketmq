@@ -374,7 +374,7 @@ public class NettyRemotingClient extends NettyRemotingAbstract implements Remoti
         throws InterruptedException, RemotingConnectException, RemotingSendRequestException, RemotingTimeoutException {
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss:SSS");
 
-        System.out.println(simpleDateFormat.format(new Date()) + " Invoke sync,addr " + addr);
+        System.out.println(simpleDateFormat.format(new Date()) + " Invoke sync,addr " + addr + ",code " + request.getCode());
 
         final Channel channel = this.getAndCreateChannel(addr);
         if (channel != null && channel.isActive()) {
