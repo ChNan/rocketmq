@@ -111,22 +111,22 @@
     </properties>
 
     <modules>
-        <module>client</module>
-        <module>common</module>
-        <module>broker</module>
-        <module>tools</module>
-        <module>store</module>
-        <module>namesrv</module>
-        <module>remoting</module>
-        <module>logappender</module>
-        <module>example</module>
-        <module>srvutil</module>
-        <module>filter</module>
-        <module>test</module>
-        <module>distribution</module>
-        <module>openmessaging</module>
-        <module>logging</module>
-        <module>acl</module>
+        <module>rocketmq-client</module>
+        <module>rocketmq-common</module>
+        <module>rocketmq-broker</module>
+        <module>rocketmq-tools</module>
+        <module>rocketmq-store</module>
+        <module>rocketmq-namesrv</module>
+        <module>rocketmq-remoting</module>
+        <module>rocketmq-logappender</module>
+        <module>rocketmq-example</module>
+        <module>rocketmq-srvutil</module>
+        <module>rocketmq-filter</module>
+        <module>rocketmq-test</module>
+        <module>rocketmq-distribution</module>
+        <module>rocketmq-openmessaging</module>
+        <module>rocketmq-logging</module>
+        <module>rocketmq-acl</module>
     </modules>
 
     <build>
